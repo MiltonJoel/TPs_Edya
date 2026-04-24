@@ -29,8 +29,8 @@ class Punto p
 
 -- b) Se utilizarán los siguientes tipos de datos para representar puntos en el plano y en el espacio tridimensional:
 
-newtype Punto2d = P2d (Double, Double) deriving Show
-newtype Punto3d = P3d (Double, Double, Double) deriving Show
+newtype Punto2d = P2d (Double, Double) deriving (Show, Eq)
+newtype Punto3d = P3d (Double, Double, Double) deriving (Show, Eq)
 
 -- Dar las instancias de Punto para Punto2d y Punto3d.
 
@@ -162,3 +162,52 @@ fromList' xs = fromList2 0 (sortBy (comparaCoords 0) xs)
         -- Toma un eje y dos puntos y devuelve el Ordering según dicho eje
         comparaCoords :: Int -> p -> p -> Ordering
         comparaCoords eje p1 p2 = compare (coord eje p1) (coord eje p2)
+
+-- Ejercicio 4
+
+--minEnje: Busca el punto con menor valor en el eje e dentro de todo el árbol.
+minEnEje :: Punto p => Int -> NdTree p -> p
+minEnEje _ Empty = error "árbol vacío"
+minEnEje _ (Node Empty p Empty _) = p
+minEnEje e (Node Empty p der _) = minimoEntre e p (minEnEje e der)
+minEnEje e (Node izq p Empty _) = minimoEntre e p (minEnEje e izq)
+minEnEje e (Node izq p der _) = minimoEntre e p (minimoEntre e (minEnEje e izq) (minEnEje e der))
+
+--maxEnje: Busca el punto con mayor valor en el eje e dentro de todo el árbol.
+maxEnEje :: Punto p => Int -> NdTree p -> p 
+maxEnEje _ Empty = error "árbol vacío"
+maxEnEje _ (Node Empty p Empty _) = p 
+maxEnEje e (Node Empty p der _) =
+    maximoEntre e p (maxEnEje e der)
+maxEnEje e (Node izq p Empty _) =
+    maximoEntre e p (maxEnEje e izq)
+maxEnEje e (Node izq p der _) =
+    maximoEntre e p (maximoEntre e (maxEnEje e izq) (maxEnEje e der))
+
+--minimoEntre: compara dos puntos en el eje e y devuelve el menor.
+--Ejemplo: minimoEntre 1 (2,3) (4,7) -> (2,3)
+minimoEntre :: Punto p => Int -> p -> p -> p 
+minimoEntre e p1 p2 = if coord e p1 <= coord e p2 then p1 else p2
+
+maximoEntre :: Punto p => Int -> p -> p -> p
+maximoEntre e p1 p2 = if coord e p1 >= coord e p2 then p1 else p2
+
+-- eliminar: 
+eliminar :: (Eq p, Punto p) => p -> NdTree p -> NdTree p 
+eliminar _ Empty = Empty 
+eliminar p (Node izq raiz der e)
+    | coord e p < coord e raiz = Node (eliminar p izq) raiz der e 
+    | coord e p > coord e raiz = Node izq raiz (eliminar p der) e 
+    | p == raiz = reemplazar izq der e
+    |otherwise = Node izq raiz (eliminar p der) e 
+
+reemplazar :: (Eq p, Punto p) => NdTree p -> NdTree p -> Int -> NdTree p 
+reemplazar Empty Empty _ = Empty 
+reemplazar izq der e =
+    let reemplazante = if der /= Empty 
+                        then minEnEje e der 
+                        else maxEnEje e izq 
+        nuevoIzq = if der /= Empty then izq else eliminar reemplazante izq 
+        nuevoDer = if der /= Empty then eliminar reemplazante der else Empty 
+    in Node nuevoIzq reemplazante nuevoDer e 
+

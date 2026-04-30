@@ -144,18 +144,18 @@ fromList xs = fromList2 0 (sortBy (comparaCoords 0) xs)
 
 -- Ejercicio 3
 -- Toma un punto y un árbol e inserta el punto en el árbol (Criterio <=) [No asegura balanceado]
-insertar :: forall p. (Punto p) => p -> NdTree p -> NdTree p
+insertar :: (Punto p) => p -> NdTree p -> NdTree p
 insertar = insertarConEje 0
     where
         -- Toma un eje (que se asignará si llega a Empty), un punto y un árbol e inserta el punto en el árbol
-        insertarConEje :: Int -> p -> NdTree p -> NdTree p
+        insertarConEje :: (Punto p) => Int -> p -> NdTree p -> NdTree p
         insertarConEje eje p Empty = Node Empty p Empty eje
         insertarConEje _ p (Node izq raiz der e)
             | (<=) (coord e p) (coord e raiz) = Node (insertarConEje (siguienteEje e raiz) p izq) raiz der e
             | otherwise = Node izq raiz (insertarConEje (siguienteEje e raiz) p der) e
 
         -- Toma un eje y un punto y devuelve el eje siguiente
-        siguienteEje :: Int -> p -> Int
+        siguienteEje ::(Punto p)=> Int ->p -> Int
         siguienteEje eje p = mod (eje + 1) (dimension p)
 
 -- Ejercicio 4

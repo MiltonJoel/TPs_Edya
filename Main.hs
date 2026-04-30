@@ -3,9 +3,14 @@
 -- Para poder poner los tipos manteniendo la letra dentro de la función
 {-# LANGUAGE ScopedTypeVariables #-}
 
+module Main where
+
 -- sortBy toma una función de comparación y una lista y devuelve la lista ordenada con dicho criterio
 -- partition es exactamente igual a filter pero devuelve la tupla de ([CUMPLEN], [NO CUMPLEN])
 import Data.List (partition, sortBy)
+
+main :: IO ()
+main = return ()
 
 data NdTree p
   = Node
@@ -208,73 +213,9 @@ type Rect = (Punto2d, Punto2d)
 
 inRegion :: Punto2d -> Rect -> Bool
 inRegion (P2d (x, y)) (P2d (x1, y1), P2d (x2, y2)) =
-  and [(>=) x xMin, (<=) x xMax, (>=) y yMin, (<=) y yMax]
+  and [ x >= xMin, x <= xMax, y >= yMin, y <= yMax]
   where
     xMin = min x1 x2
     xMax = max x1 x2
     yMin = min y1 y2
     yMax = max y1 y2
-
--- test cases
-
-p2d1 :: Punto2d
-p2d1 = P2d (1, 1)
-
-p2d2 :: Punto2d
-p2d2 = P2d (3, 4)
-
-p2d3 :: Punto2d
-p2d3 = P2d (5, 2)
-
-p2d4 :: Punto2d
-p2d4 = P2d (2, 6)
-
-p2d5 :: Punto2d
-p2d5 = P2d (4, 0)
-
-arbol2dVacio :: NdTree Punto2d
-arbol2dVacio = Empty
-
-arbol2dManual :: NdTree Punto2d
-arbol2dManual =
-  Node
-    (Node Empty p2d1 Empty 1)
-    p2d2
-    (Node Empty p2d3 Empty 1)
-    0
-
-arbol2dLista :: NdTree Punto2d
-arbol2dLista = fromList [p2d1, p2d2, p2d3, p2d4, p2d5]
-
-arbol2dConInsertar :: NdTree Punto2d
-arbol2dConInsertar = insertar p2d4 arbol2dManual
-
-arbol2dConEliminar :: NdTree Punto2d
-arbol2dConEliminar = eliminar p2d2 arbol2dLista
-
-rect2dGrande :: Rect
-rect2dGrande = (P2d (0, 0), P2d (5, 5))
-
-rect2dChico :: Rect
-rect2dChico = (P2d (2, 2), P2d (4, 4))
-
-rect2dInvertido :: Rect
-rect2dInvertido = (P2d (5, 5), P2d (0, 0))
-
-p2dDentroRectGrande :: Bool
-p2dDentroRectGrande = inRegion p2d2 rect2dGrande
-
-p2dFueraRectChico :: Bool
-p2dFueraRectChico = inRegion p2d4 rect2dChico
-
-p3d1 :: Punto3d
-p3d1 = P3d (1, 2, 3)
-
-p3d2 :: Punto3d
-p3d2 = P3d (4, 1, 0)
-
-p3d3 :: Punto3d
-p3d3 = P3d (2, 5, 6)
-
-arbol3dLista :: NdTree Punto3d
-arbol3dLista = fromList [p3d1, p3d2, p3d3]

@@ -162,6 +162,24 @@ fromList' xs = fromList2 0 (sortBy (comparaCoords 0) xs)
         -- Toma un eje y dos puntos y devuelve el Ordering según dicho eje
         comparaCoords :: Int -> p -> p -> Ordering
         comparaCoords eje p1 p2 = compare (coord eje p1) (coord eje p2)
+-- Ejercicio 3
+
+insertar :: Punto p => p -> NdTree p -> NdTree p
+insertar p Empty = Node Empty p Empty 0
+insertar p (Node izq raiz der e)
+    | (<=) (coord e p) (coord e raiz) = Node (insertarConEje siguienteEje p izq) raiz der e
+    | otherwise = Node izq raiz (insertarConEje siguienteEje p der) e
+    where
+        siguienteEje = (\eje -> mod ((+) eje 1) (dimension raiz)) e
+
+insertarConEje :: Punto p => Int -> p -> NdTree p -> NdTree p
+insertarConEje e p Empty = Node Empty p Empty e
+insertarConEje _ p (Node izq raiz der e)
+    | (<=) (coord e p) (coord e raiz) = Node (insertarConEje siguienteEje p izq) raiz der e
+    | otherwise = Node izq raiz (insertarConEje siguienteEje p der) e
+    where
+        siguienteEje = (\eje -> mod (eje+1) (dimension raiz)) e
+
 
 -- Ejercicio 4
 
@@ -211,3 +229,81 @@ reemplazar izq der e =
         nuevoDer = if der /= Empty then eliminar reemplazante der else Empty 
     in Node nuevoIzq reemplazante nuevoDer e 
 
+-- ejercicio 5
+
+type Rect = (Punto2d, Punto2d)
+
+inRegion :: Punto2d -> Rect -> Bool
+inRegion (P2d (x, y)) (P2d (x1, y1), P2d (x2, y2)) =
+    and [(>=) x xMin, (<=) x xMax, (>=) y yMin, (<=) y yMax]
+    where
+        xMin = min x1 x2
+        xMax = max x1 x2
+        yMin = min y1 y2
+        yMax = max y1 y2
+
+
+
+-- test cases 
+
+p2d1 :: Punto2d
+p2d1 = P2d (1, 1)
+
+p2d2 :: Punto2d
+p2d2 = P2d (3, 4)
+
+p2d3 :: Punto2d
+p2d3 = P2d (5, 2)
+
+p2d4 :: Punto2d
+p2d4 = P2d (2, 6)
+
+p2d5 :: Punto2d
+p2d5 = P2d (4, 0)
+
+arbol2dVacio :: NdTree Punto2d
+arbol2dVacio = Empty
+
+arbol2dManual :: NdTree Punto2d
+arbol2dManual =
+    Node
+        (Node Empty p2d1 Empty 1)
+        p2d2
+        (Node Empty p2d3 Empty 1)
+        0
+
+arbol2dLista :: NdTree Punto2d
+arbol2dLista = fromList [p2d1, p2d2, p2d3, p2d4, p2d5]
+
+arbol2dConInsertar :: NdTree Punto2d
+arbol2dConInsertar = insertar p2d4 arbol2dManual
+
+arbol2dConEliminar :: NdTree Punto2d
+arbol2dConEliminar = eliminar p2d2 arbol2dLista
+
+rect2dGrande :: Rect
+rect2dGrande = (P2d (0, 0), P2d (5, 5))
+
+rect2dChico :: Rect
+rect2dChico = (P2d (2, 2), P2d (4, 4))
+
+rect2dInvertido :: Rect
+rect2dInvertido = (P2d (5, 5), P2d (0, 0))
+
+p2dDentroRectGrande :: Bool
+p2dDentroRectGrande = inRegion p2d2 rect2dGrande
+
+p2dFueraRectChico :: Bool
+p2dFueraRectChico = inRegion p2d4 rect2dChico
+
+p3d1 :: Punto3d
+p3d1 = P3d (1, 2, 3)
+
+p3d2 :: Punto3d
+p3d2 = P3d (4, 1, 0)
+
+p3d3 :: Punto3d
+p3d3 = P3d (2, 5, 6)
+
+arbol3dLista :: NdTree Punto3d
+arbol3dLista = fromList [p3d1, p3d2, p3d3]

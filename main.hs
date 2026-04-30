@@ -124,7 +124,7 @@ fromList xs = fromList2 0 (sortBy (comparaCoords 0) xs)
           resto = take indexMediana xs ++ drop (indexMediana + 1) xs
 
           -- Parto la lista en los menores o iguales y mayores a la mediana
-          (men, may) = partition (\p -> (coord eje p <= coord eje p1)) resto :: ([p], [p])
+          (men, may) = partition (\p -> coord eje p <= coord eje p1) resto :: ([p], [p])
 
           newEje :: Int -- El nuevo eje a tomar para ordenar
           newEje = (eje + 1) `mod` dimension p1
@@ -138,22 +138,20 @@ fromList xs = fromList2 0 (sortBy (comparaCoords 0) xs)
     comparaCoords eje p1 p2 = compare (coord eje p1) (coord eje p2)
 
 -- Ejercicio 3
+-- Toma un punto y un árbol e inserta el punto en el árbol (Criterio <=) [No asegura balanceado]
+insertar :: forall p. (Punto p) => p -> NdTree p -> NdTree p
+insertar = insertarConEje 0
+    where
+        -- Toma un eje (que se asignará si llega a Empty), un punto y un árbol e inserta el punto en el árbol
+        insertarConEje :: Int -> p -> NdTree p -> NdTree p
+        insertarConEje eje p Empty = Node Empty p Empty eje
+        insertarConEje _ p (Node izq raiz der e)
+            | (<=) (coord e p) (coord e raiz) = Node (insertarConEje (siguienteEje e raiz) p izq) raiz der e
+            | otherwise = Node izq raiz (insertarConEje (siguienteEje e raiz) p der) e
 
-insertar :: (Punto p) => p -> NdTree p -> NdTree p
-insertar p Empty = Node Empty p Empty 0
-insertar p (Node izq raiz der e)
-  | (<=) (coord e p) (coord e raiz) = Node (insertarConEje siguienteEje p izq) raiz der e
-  | otherwise = Node izq raiz (insertarConEje siguienteEje p der) e
-  where
-    siguienteEje = (\eje -> mod ((+) eje 1) (dimension raiz)) e
-
-insertarConEje :: (Punto p) => Int -> p -> NdTree p -> NdTree p
-insertarConEje e p Empty = Node Empty p Empty e
-insertarConEje _ p (Node izq raiz der e)
-  | (<=) (coord e p) (coord e raiz) = Node (insertarConEje siguienteEje p izq) raiz der e
-  | otherwise = Node izq raiz (insertarConEje siguienteEje p der) e
-  where
-    siguienteEje = (\eje -> mod (eje + 1) (dimension raiz)) e
+        -- Toma un eje y un punto y devuelve el eje siguiente
+        siguienteEje :: Int -> p -> Int
+        siguienteEje eje p = mod (eje + 1) (dimension p)
 
 -- Ejercicio 4
 

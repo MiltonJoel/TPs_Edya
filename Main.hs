@@ -213,3 +213,17 @@ inRegion (P2d (x, y)) (P2d (x1, y1), P2d (x2, y2)) =
     yMin = min y1 y2
     yMax = max y1 y2
 
+ortogonalSearch :: NdTree Punto2d -> Rect -> [Punto2d]
+ortogonalSearch Empty _ = []
+ortogonalSearch (Node izq p der e) rect =
+  let enRaiz    = [p | inRegion p rect]
+      coordRaiz = coord e p
+      coordA    = coord e (fst rect)
+      coordB    = coord e (snd rect)
+      buscarIzq = if min coordA coordB <= coordRaiz
+                  then ortogonalSearch izq rect
+                  else []
+      buscarDer = if max coordA coordB > coordRaiz
+                  then ortogonalSearch der rect
+                  else []
+  in enRaiz ++ buscarIzq ++ buscarDer

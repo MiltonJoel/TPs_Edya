@@ -9,6 +9,7 @@ import Main
     fromList,
     inRegion,
     insertar,
+    ortogonalSearch,
   )
 
 import System.Exit (exitFailure)
@@ -81,7 +82,13 @@ tests :: [(String, Bool)]
 tests =
   [ ("p2d2 esta dentro de rect2dGrande", p2dDentroRectGrande),
     ("p2d4 esta fuera de rect2dChico", not p2dFueraRectChico),
-    ("p2d2 esta dentro de rect2dInvertido", inRegion p2d2 rect2dInvertido)
+    ("p2d2 esta dentro de rect2dInvertido", inRegion p2d2 rect2dInvertido),
+    ("ortogonalSearch rect grande contiene p2d1", p2d1 `elem` ortogonalSearch arbol2dLista rect2dGrande),
+    ("ortogonalSearch rect grande contiene p2d2", p2d2 `elem` ortogonalSearch arbol2dLista rect2dGrande),
+    ("ortogonalSearch rect grande contiene p2d3", p2d3 `elem` ortogonalSearch arbol2dLista rect2dGrande),
+    ("ortogonalSearch rect vacio da lista vacia", ortogonalSearch arbol2dLista (P2d (10,10), P2d (20,20)) == []),
+    ("ortogonalSearch arbol vacio da lista vacia", ortogonalSearch arbol2dVacio rect2dGrande == []),
+    ("ortogonalSearch rect invertido contiene p2d1", p2d1 `elem` ortogonalSearch arbol2dLista rect2dInvertido)
   ]
 
 main :: IO ()

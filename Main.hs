@@ -163,21 +163,32 @@ insertar = insertarConEje 0
 -- minEnje: Busca el punto con menor valor en el eje e dentro de todo el árbol.
 minEnEje :: (Punto p) => Int -> NdTree p -> p
 minEnEje _ Empty = error "árbol vacío"
-minEnEje _ (Node Empty p Empty _) = p
-minEnEje e (Node Empty p der _) = minimoEntre e p (minEnEje e der)
-minEnEje e (Node izq p Empty _) = minimoEntre e p (minEnEje e izq)
-minEnEje e (Node izq p der _) = minimoEntre e p (minimoEntre e (minEnEje e izq) (minEnEje e der))
-
+minEnEje e (Node izq p der eNodo)
+  | e == eNodo = case izq of
+      Empty -> p
+      _     -> minEnEje e izq
+  | otherwise = case (izq, der) of
+      (Empty, Empty) -> p
+      (Empty, _)     -> minimoEntre e p (minEnEje e der)
+      (_, Empty)     -> minimoEntre e p (minEnEje e izq)
+      _              -> minimoEntre e p (minimoEntre e (minEnEje e izq) (minEnEje e der))
+  where
+    minimoEntre e p1 p2 = if coord e p1 <= coord e p2 then p1 else p2
+    
 -- maxEnje: Busca el punto con mayor valor en el eje e dentro de todo el árbol.
 maxEnEje :: (Punto p) => Int -> NdTree p -> p
 maxEnEje _ Empty = error "árbol vacío"
-maxEnEje _ (Node Empty p Empty _) = p
-maxEnEje e (Node Empty p der _) =
-  maximoEntre e p (maxEnEje e der)
-maxEnEje e (Node izq p Empty _) =
-  maximoEntre e p (maxEnEje e izq)
-maxEnEje e (Node izq p der _) =
-  maximoEntre e p (maximoEntre e (maxEnEje e izq) (maxEnEje e der))
+maxEnEje e (Node izq p der eNodo)
+  | e == eNodo = case der of
+      Empty -> p
+      _     -> maxEnEje e der
+  | otherwise = case (izq, der) of
+      (Empty, Empty) -> p
+      (Empty, _)     -> maximoEntre e p (maxEnEje e der)
+      (_, Empty)     -> maximoEntre e p (maxEnEje e izq)
+      _              -> maximoEntre e p (maximoEntre e (maxEnEje e izq) (maxEnEje e der))
+  where
+    maximoEntre e p1 p2 = if coord e p1 >= coord e p2 then p1 else p2
 
 -- minimoEntre: compara dos puntos en el eje e y devuelve el menor.
 -- Ejemplo: minimoEntre 1 (2,3) (4,7) -> (2,3)
@@ -219,3 +230,4 @@ inRegion (P2d (x, y)) (P2d (x1, y1), P2d (x2, y2)) =
     xMax = max x1 x2
     yMin = min y1 y2
     yMax = max y1 y2
+

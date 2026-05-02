@@ -202,21 +202,18 @@ maximoEntre e p1 p2 = if coord e p1 >= coord e p2 then p1 else p2
 eliminar :: (Eq p, Punto p) => p -> NdTree p -> NdTree p
 eliminar _ Empty = Empty
 eliminar p (Node izq raiz der e)
-  | coord e p < coord e raiz = Node (eliminar p izq) raiz der e
   | coord e p > coord e raiz = Node izq raiz (eliminar p der) e
-  | p == raiz = reemplazar izq der e
-  | otherwise = Node (eliminar p izq) raiz der e
+  | p == raiz                = reemplazar izq der e
+  | otherwise                = Node (eliminar p izq) raiz der e
 
 reemplazar :: (Eq p, Punto p) => NdTree p -> NdTree p -> Int -> NdTree p
 reemplazar Empty Empty _ = Empty
-reemplazar izq der e =
-  let reemplazante =
-        if der /= Empty
-          then minEnEje e der
-          else maxEnEje e izq
-      nuevoIzq = if der /= Empty then izq else eliminar reemplazante izq
-      nuevoDer = if der /= Empty then eliminar reemplazante der else Empty
-   in Node nuevoIzq reemplazante nuevoDer e
+reemplazar izq   Empty e =
+  let reemplazante = maxEnEje e izq
+  in Node (eliminar reemplazante izq) reemplazante Empty e
+reemplazar izq   der   e =
+  let reemplazante = minEnEje e der
+  in Node izq reemplazante (eliminar reemplazante der) e
 
 -- ejercicio 5
 

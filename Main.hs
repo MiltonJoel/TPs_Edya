@@ -160,60 +160,45 @@ insertar = insertarConEje 0
 
 -- Ejercicio 4
 
--- minEnje: Busca el punto con menor valor en el eje e dentro de todo el árbol.
-minEnEje :: (Punto p) => Int -> NdTree p -> p
-minEnEje _ Empty = error "árbol vacío"
-minEnEje e (Node izq p der eNodo)
-  | e == eNodo = case izq of
-      Empty -> p
-      _     -> minEnEje e izq
-  | otherwise = case (izq, der) of
-      (Empty, Empty) -> p
-      (Empty, _)     -> minimoEntre e p (minEnEje e der)
-      (_, Empty)     -> minimoEntre e p (minEnEje e izq)
-      _              -> minimoEntre e p (minimoEntre e (minEnEje e izq) (minEnEje e der))
-  where
-    minimoEntre e p1 p2 = if coord e p1 <= coord e p2 then p1 else p2
-    
--- maxEnje: Busca el punto con mayor valor en el eje e dentro de todo el árbol.
-maxEnEje :: (Punto p) => Int -> NdTree p -> p
-maxEnEje _ Empty = error "árbol vacío"
-maxEnEje e (Node izq p der eNodo)
-  | e == eNodo = case der of
-      Empty -> p
-      _     -> maxEnEje e der
-  | otherwise = case (izq, der) of
-      (Empty, Empty) -> p
-      (Empty, _)     -> maximoEntre e p (maxEnEje e der)
-      (_, Empty)     -> maximoEntre e p (maxEnEje e izq)
-      _              -> maximoEntre e p (maximoEntre e (maxEnEje e izq) (maxEnEje e der))
-  where
-    maximoEntre e p1 p2 = if coord e p1 >= coord e p2 then p1 else p2
-
--- minimoEntre: compara dos puntos en el eje e y devuelve el menor.
--- Ejemplo: minimoEntre 1 (2,3) (4,7) -> (2,3)
-minimoEntre :: (Punto p) => Int -> p -> p -> p
-minimoEntre e p1 p2 = if coord e p1 <= coord e p2 then p1 else p2
-
-maximoEntre :: (Punto p) => Int -> p -> p -> p
-maximoEntre e p1 p2 = if coord e p1 >= coord e p2 then p1 else p2
-
--- eliminar:
 eliminar :: (Eq p, Punto p) => p -> NdTree p -> NdTree p
 eliminar _ Empty = Empty
 eliminar p (Node izq raiz der e)
   | coord e p > coord e raiz = Node izq raiz (eliminar p der) e
   | p == raiz                = reemplazar izq der e
   | otherwise                = Node (eliminar p izq) raiz der e
+  where
+    reemplazar Empty Empty _ = Empty
+    reemplazar izq   Empty e =
+      let reemplazante = maxEnEje e izq
+      in Node (eliminar reemplazante izq) reemplazante Empty e
+    reemplazar izq   der   e =
+      let reemplazante = minEnEje e der
+      in Node izq reemplazante (eliminar reemplazante der) e
 
-reemplazar :: (Eq p, Punto p) => NdTree p -> NdTree p -> Int -> NdTree p
-reemplazar Empty Empty _ = Empty
-reemplazar izq   Empty e =
-  let reemplazante = maxEnEje e izq
-  in Node (eliminar reemplazante izq) reemplazante Empty e
-reemplazar izq   der   e =
-  let reemplazante = minEnEje e der
-  in Node izq reemplazante (eliminar reemplazante der) e
+    minEnEje _ Empty = error "árbol vacío"
+    minEnEje e (Node izq p der eNodo)
+      | e == eNodo = case izq of
+          Empty -> p
+          _     -> minEnEje e izq
+      | otherwise = case (izq, der) of
+          (Empty, Empty) -> p
+          (Empty, _)     -> minimoEntre e p (minEnEje e der)
+          (_, Empty)     -> minimoEntre e p (minEnEje e izq)
+          _              -> minimoEntre e p (minimoEntre e (minEnEje e izq) (minEnEje e der))
+
+    maxEnEje _ Empty = error "árbol vacío"
+    maxEnEje e (Node izq p der eNodo)
+      | e == eNodo = case der of
+          Empty -> p
+          _     -> maxEnEje e der
+      | otherwise = case (izq, der) of
+          (Empty, Empty) -> p
+          (Empty, _)     -> maximoEntre e p (maxEnEje e der)
+          (_, Empty)     -> maximoEntre e p (maxEnEje e izq)
+          _              -> maximoEntre e p (maximoEntre e (maxEnEje e izq) (maxEnEje e der))
+
+    minimoEntre e p1 p2 = if coord e p1 <= coord e p2 then p1 else p2
+    maximoEntre e p1 p2 = if coord e p1 >= coord e p2 then p1 else p2
 
 -- ejercicio 5
 

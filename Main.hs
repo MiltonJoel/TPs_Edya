@@ -56,7 +56,7 @@ instance Punto Punto3d where
 -- Ejercicio 2
 
 fromList :: forall p. (Punto p) => [p] -> NdTree p
-fromList xs = fromList2 0 (sortBy (comparaCoords 0) xs)
+fromList xss = fromList2 0 (sortBy (comparaCoords 0) xss)
   where
     -- Toma un eje y una lista ordenada por dicho eje, y devuelve el NdTree de dichos puntos
     fromList2 :: Int -> [p] -> NdTree p

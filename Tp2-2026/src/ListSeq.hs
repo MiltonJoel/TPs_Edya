@@ -6,6 +6,7 @@ module ListSeq where
 import Par
 import Seq
 import Data.List (foldl')
+import GHC.Real (reduce)
 
 instance Seq [] where
   -- O(1)
@@ -16,15 +17,39 @@ instance Seq [] where
   singletonS :: a -> [a]
   singletonS x = [x]
 
+  {-
+    lengthS no es paralelizable en lo más mínimo porque la mera división de
+    la lista es O(n), y la suma es O(1), por lo que no lo vale.
+    Si la spliteo, la única manera es splitAt. Luego, el propio uso splitAt
+    requiere intrínsecamente el uso de length, que es de O(n), por lo que 
+    no tiene sentido. 
+  -}
   -- O(n)
   lengthS :: [a] -> Int
   lengthS = length
+
+  {-
+  -- O(n)
+  lengthS :: [a] -> Int
+  lengthS [] = 0
+  lengthS [x] = 1
+  lengthS (x:xs) = 1 + lengthS xs 
+  -}
 
   -- O(n)
   nthS :: [a] -> Int -> a
   nthS xs i = xs !! i
 
-  -- O(n) si usa mapS3
+  {-
+  -- O(n)
+  nthS :: [a] -> Int
+  nthS [] _ = error "el índice excede el length de la lista"
+  nthS (x:xs) 0 = x
+  nthS (x:xs) i = nthS xs (i - 1) 
+  -}
+
+  -- O(n) -> si f es O(1) y usa mapS secuencial
+  -- O(?) -> si f es O(1) y usa mapS con Treeview?
   tabulateS :: (Int -> a) -> Int -> [a]
   tabulateS f n = mapS f [0 .. n - 1]
 
@@ -38,9 +63,18 @@ instance Seq [] where
        in appendS a b
   -}
 
-  -- O(n)
+  -- O(W(f) * n)
   mapS :: (a -> b) -> [a] -> [b]
   mapS = map
+
+  {-
+  -- O(max W(f) + O(n) «por cons» + W(paralelizar))
+  mapS :: (a -> b) -> [a] -> [b]
+  mapS _ [] = []
+  mapS f (x:xs) =
+    let (x', xs') = f x ||| mapS f xs
+     in x' : xs'
+  -}
 
   {-
   mapS1 :: (a -> b) -> [a] -> [b]
@@ -63,9 +97,18 @@ instance Seq [] where
        in appendS a b
   -}
 
-  -- O(n)
+  -- O(W(f) * n)
   filterS :: (a -> Bool) -> [a] -> [a]
   filterS = filter
+
+  {-
+  -- O(max W(f) + O(n) «por cons» + W(paralelizar))
+  filterS :: (a -> Bool) -> [a] -> [a]
+  filterS _ [] = []
+  filterS f (x:xs) = 
+    let (cond, xs') = f x ||| filterS f xs
+     in (if cond then x : xs' else xs')
+  -}
 
   {-
   filterS1 :: (a -> Bool) -> [a] -> [a]
@@ -82,22 +125,55 @@ instance Seq [] where
   appendS :: [a] -> [a] -> [a]
   appendS xs ys = xs ++ ys
 
-  -- O(n)
+  {-
+  -- O(n) -> siendo n el length de la primera
+  appendS :: [a] -> [a] -> [a]
+  appendS [] ys = ys
+  appendS (x:xs) ys = x : appendS xs ys
+  -}
+
+  -- O(k)
   takeS :: [a] -> Int -> [a]
-  takeS xs n = take n xs
+  takeS xs k = take k xs
+
+  {-
+  -- O(k)
+  takeS :: [a] -> Int -> [a]
+  takeS [] _ = []
+  takeS xs 0 = []
+  takeS (x:xs) k = x : takeS xs (k - 1)
+  -}
 
   -- O(n)
   dropS :: [a] -> Int -> [a]
-  dropS xs n = drop n xs
+  dropS xs k = drop k xs
 
-  -- O(n)
+  {-
+  -- O(k)
+  dropS :: [a] -> Int -> [a]
+  dropS [] _ = []
+  dropS xs 0 = xs
+  dropS (x:xs) k = dropS xs (k - 1)
+  -}
+
+  -- O(n) -> W(len) = n, W(split) = n
   showtS :: [a] -> TreeView a ([a])
   showtS [] = EMPTY
   showtS [x] = ELT x
   showtS xs =
     let mitad = lengthS xs `div` 2
-        (l, r) = splitAt mitad xs
+        (l, r) = splitAt' mitad xs
      in NODE l r
+      where
+        splitAt' = splitAt
+        {-
+        splitAt' _ [] = ([], [])
+        splitAt' k (x : xs) 
+          | n <= 0 = ([], x : xs)
+          | otherwise = (x : xs', ys)
+            where
+              (xs', ys) = splitAt' (n - 1) xs
+        -}
 
   -- O(1)
   showlS :: [a] -> ListView a ([a])
@@ -109,13 +185,32 @@ instance Seq [] where
   joinS = concat
 
   {-
-  joinS1 :: [[a]] -> [a]
-  joinS1 = reduceS appendS []
+  -- O(n) -> siendo n el largo de todas las listas sumadas
+  joinS :: [[a]] -> [a]
+  joinS [] = []
+  joinS [xs] = xs  
+  joinS (xs:xss) = appendS xs (joinS xss)
   -}
 
-  -- O(n)
+  {-
+  joinS :: [[a]] -> [a]
+  joinS = reduceS appendS []
+  -}
+
   reduceS :: (a -> a -> a) -> a -> [a] -> a
-  reduceS = foldl'
+  -- O(n * W(f))
+  --reduceS = foldl'
+
+  -- O(lg n *  max S(f) + O(n) + W(paralelizar))
+  reduceS _ e [] = e
+  reduceS _ _ [x] = x 
+  reduceS f e xs = reduceS f e (contraer xs)
+      where
+        contraer [] = [e]
+        contraer [x] = [x]
+        contraer (x : y : rest) = 
+          let (a, b) = f x y ||| contraer rest
+           in a : b
 
   {-
   reduceS2 :: (a -> a -> a) -> a -> [a] -> a

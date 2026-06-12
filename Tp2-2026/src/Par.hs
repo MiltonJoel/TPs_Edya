@@ -12,6 +12,8 @@
 module Par ((|||)) where
 
 import Control.Parallel
+-- GHC.Conc en vez de Control.Parallel, es lo mismo pero no me da error
+--import GHC.Conc
 
 infix 1 |||
 

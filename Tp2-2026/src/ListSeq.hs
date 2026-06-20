@@ -39,12 +39,12 @@ instance Seq [] where
   -}
 
   -- Work -> O(n * W(f))
-  -- Span -> O(max n S(f) + S(paralelizar) * n)
+  -- Span -> O(max n S(f) + W(paralelizar) * n)
   tabulateS :: (Int -> a) -> Int -> [a]
   tabulateS f n = mapS f [0 .. n - 1]
 
   -- Work -> O(n * W(f))
-  -- Span -> O(max n S(f) + S(paralelizar) * n)
+  -- Span -> O(max n S(f) + W(paralelizar) * n)
   mapS :: (a -> b) -> [a] -> [b]
   mapS _ [] = []
   mapS f (x:xs) =
@@ -58,7 +58,7 @@ instance Seq [] where
   -}
 
   -- Work -> O(n * W(f))
-  -- Span -> O(max n S(f) + S(paralelizar) * n)
+  -- Span -> O(max n S(f) + W(paralelizar) * n)
   filterS :: (a -> Bool) -> [a] -> [a]
   filterS _ [] = []
   filterS f (x:xs) = 
@@ -156,13 +156,12 @@ instance Seq [] where
   -}
 
   -- Work -> O(n * W(f))
-  -- O(lg n * S(f) + O(n) + S(paralelizar))
+  -- Span -> O(lg n * S(f) + O(n) + W(paralelizar))
   reduceS :: (a -> a -> a) -> a -> [a] -> a
   reduceS _ e [] = e
   reduceS _ _ [x] = x 
   reduceS f e xs = reduceS f e (contraer xs)
       where
-        --
         contraer [] = []
         contraer [x] = [x]
         contraer (x : y : rest) = 
@@ -170,7 +169,7 @@ instance Seq [] where
            in a : b
 
   -- Work -> O(n * W(f))
-  -- Span -> O(lg n * max S(f) + O(n) + S(paralelizar))
+  -- Span -> O(lg n * S(f) + O(n) + W(paralelizar))
   -- Sea (n = 2k), o (n = 2k + 1)
   scanS :: (a -> a -> a) -> a -> [a] -> ([a], a)
   scanS _ e [] = ([], e)

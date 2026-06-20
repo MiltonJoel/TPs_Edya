@@ -5,8 +5,6 @@ module ListSeq where
 
 import Par
 import Seq
-import Data.List (foldl')
-import GHC.Real (reduce)
 
 instance Seq [] where
   -- O(1)
@@ -17,147 +15,100 @@ instance Seq [] where
   singletonS :: a -> [a]
   singletonS x = [x]
 
-  {-
-    lengthS no es paralelizable en lo más mínimo porque la mera división de
-    la lista es O(n), y la suma es O(1), por lo que no lo vale.
-    Si la spliteo, la única manera es splitAt. Luego, el propio uso splitAt
-    requiere intrínsecamente el uso de length, que es de O(n), por lo que 
-    no tiene sentido. 
-  -}
-  -- O(n)
-  lengthS :: [a] -> Int
-  lengthS = length
-
-  {-
   -- O(n)
   lengthS :: [a] -> Int
   lengthS [] = 0
-  lengthS [x] = 1
   lengthS (x:xs) = 1 + lengthS xs 
+
+  {-
+  -- O(n)
+  lengthS :: [a] -> Int
+  lengthS = length
   -}
 
+  -- O(n) --> Work = i
+  nthS :: [a] -> Int -> a
+  nthS [] _ = error "el índice excede el tamaño de la lista"
+  nthS (x:xs) 0 = x
+  nthS (x:xs) i = nthS xs (i - 1)   
+
+  {-
   -- O(n)
   nthS :: [a] -> Int -> a
   nthS xs i = xs !! i
-
-  {-
-  -- O(n)
-  nthS :: [a] -> Int
-  nthS [] _ = error "el índice excede el length de la lista"
-  nthS (x:xs) 0 = x
-  nthS (x:xs) i = nthS xs (i - 1) 
   -}
 
-  -- O(n) -> si f es O(1) y usa mapS secuencial
-  -- O(?) -> si f es O(1) y usa mapS con Treeview?
+  -- Work -> O(n * W(f))
+  -- Span -> O(max n S(f) + S(paralelizar) * n)
   tabulateS :: (Int -> a) -> Int -> [a]
   tabulateS f n = mapS f [0 .. n - 1]
 
-  {-
-  mapS2 :: (a -> b) -> [a] -> [b]
-  mapS2 f xs = case showtS xs of
-    EMPTY -> emptyS
-    ELT x -> singletonS (f x)
-    NODE l r ->
-      let (a, b) = mapS2 f l ||| mapS2 f r
-       in appendS a b
-  -}
-
-  -- O(W(f) * n)
-  mapS :: (a -> b) -> [a] -> [b]
-  mapS = map
-
-  {-
-  -- O(max W(f) + O(n) «por cons» + W(paralelizar))
+  -- Work -> O(n * W(f))
+  -- Span -> O(max n S(f) + S(paralelizar) * n)
   mapS :: (a -> b) -> [a] -> [b]
   mapS _ [] = []
   mapS f (x:xs) =
     let (x', xs') = f x ||| mapS f xs
      in x' : xs'
-  -}
-
+  
   {-
-  mapS1 :: (a -> b) -> [a] -> [b]
-  mapS1 _ [] = []
-  mapS1 f [x] = [f x]
-  mapS1 f xs =
-    let mitad = lengthS xs `div` 2
-        (l, r) = splitAt mitad xs
-        (a, b) = mapS1 f l ||| mapS1 f r
-     in a ++ b
-  -}
-
-  {-
-  filterS2 :: (a -> Bool) -> [a] -> [a]
-  filterS2 f xs = case showtS xs of
-    EMPTY -> emptyS
-    ELT x -> if f x then singletonS x else emptyS
-    NODE l r ->
-      let (a, b) = filterS2 f l ||| filterS2 f r
-       in appendS a b
-  -}
-
   -- O(W(f) * n)
-  filterS :: (a -> Bool) -> [a] -> [a]
-  filterS = filter
+  mapS :: (a -> b) -> [a] -> [b]
+  mapS = map
+  -}
 
-  {-
-  -- O(max W(f) + O(n) «por cons» + W(paralelizar))
+  -- Work -> O(n * W(f))
+  -- Span -> O(max n S(f) + S(paralelizar) * n)
   filterS :: (a -> Bool) -> [a] -> [a]
   filterS _ [] = []
   filterS f (x:xs) = 
     let (cond, xs') = f x ||| filterS f xs
      in (if cond then x : xs' else xs')
+  
+  {-
+  -- O(W(f) * n)
+  filterS :: (a -> Bool) -> [a] -> [a]
+  filterS = filter
   -}
 
-  {-
-  filterS1 :: (a -> Bool) -> [a] -> [a]
-  filterS1 _ [] = []
-  filterS1 f [x] = [x | f x]
-  filterS1 f xs =
-    let mitad = lengthS xs `div` 2
-        (l, r) = splitAt mitad xs
-        (a, b) = filterS1 f l ||| filterS1 f r
-     in a ++ b
-  -}
-
-  -- O(n)
-  appendS :: [a] -> [a] -> [a]
-  appendS xs ys = xs ++ ys
-
-  {-
-  -- O(n) -> siendo n el length de la primera
+  -- O(n) -> siendo n el length de la primera lista
   appendS :: [a] -> [a] -> [a]
   appendS [] ys = ys
   appendS (x:xs) ys = x : appendS xs ys
+  
+  {-
+  -- O(n)
+  appendS :: [a] -> [a] -> [a]
+  appendS xs ys = xs ++ ys
   -}
 
-  -- O(k)
-  takeS :: [a] -> Int -> [a]
-  takeS xs k = take k xs
-
-  {-
-  -- O(k)
+  -- O(n) --> Work = k
   takeS :: [a] -> Int -> [a]
   takeS [] _ = []
   takeS xs 0 = []
   takeS (x:xs) k = x : takeS xs (k - 1)
-  -}
-
-  -- O(n)
-  dropS :: [a] -> Int -> [a]
-  dropS xs k = drop k xs
 
   {-
   -- O(k)
+  takeS :: [a] -> Int -> [a]
+  takeS xs k = take k xs
+  -}
+  
+  
+  -- O(n) --> Work = k
   dropS :: [a] -> Int -> [a]
   dropS [] _ = []
   dropS xs 0 = xs
   dropS (x:xs) k = dropS xs (k - 1)
+
+  {-
+  -- O(n)
+  dropS :: [a] -> Int -> [a]
+  dropS xs k = drop k xs
   -}
 
-  -- O(n) -> W(len) = n, W(split) = n
-  showtS :: [a] -> TreeView a ([a])
+  -- O(n) -> W(lenghtS) = n, W(splitAt) = n
+  showtS :: [a] -> TreeView a [a]
   showtS [] = EMPTY
   showtS [x] = ELT x
   showtS xs =
@@ -176,79 +127,123 @@ instance Seq [] where
         -}
 
   -- O(1)
-  showlS :: [a] -> ListView a ([a])
+  showlS :: [a] -> ListView a [a]
   showlS [] = NIL
   showlS (x : xs) = CONS x xs
-
-  -- O(n)
-  joinS :: [[a]] -> [a]
-  joinS = concat
-
-  {-
+  
   -- O(n) -> siendo n el largo de todas las listas sumadas
   joinS :: [[a]] -> [a]
   joinS [] = []
   joinS [xs] = xs  
   joinS (xs:xss) = appendS xs (joinS xss)
+
+  {-
+  -- O(n)
+  joinS :: [[a]] -> [a]
+  joinS = concat
   -}
 
   {-
+  -- El costo incrementa porque recorre varias veces las listas izquierdas
   joinS :: [[a]] -> [a]
   joinS = reduceS appendS []
   -}
 
-  reduceS :: (a -> a -> a) -> a -> [a] -> a
+  {-
   -- O(n * W(f))
-  --reduceS = foldl'
+  reduceS :: (a -> a -> a) -> a -> [a] -> a
+  reduceS = foldl'
+  -}
 
-  -- O(lg n *  max S(f) + O(n) + W(paralelizar))
+  -- Work -> O(n * W(f))
+  -- O(lg n * S(f) + O(n) + S(paralelizar))
+  reduceS :: (a -> a -> a) -> a -> [a] -> a
   reduceS _ e [] = e
   reduceS _ _ [x] = x 
   reduceS f e xs = reduceS f e (contraer xs)
       where
-        contraer [] = [e]
+        --
+        contraer [] = []
         contraer [x] = [x]
         contraer (x : y : rest) = 
           let (a, b) = f x y ||| contraer rest
            in a : b
 
-  {-
-  reduceS2 :: (a -> a -> a) -> a -> [a] -> a
-  reduceS2 _ e [] = e -- Caso base necesario si la lista viene vacía desde el inicio
-  reduceS2 f e xs = case showtS xs of
-    EMPTY -> e
-    ELT x -> x
-    NODE l r ->
-      let (a, b) = reduceS2 f e l ||| reduceS2 f e r
-       in f a b
-  -}
+  -- Work -> O(n * W(f))
+  -- Span -> O(lg n * max S(f) + O(n) + S(paralelizar))
+  -- Sea (n = 2k), o (n = 2k + 1)
+  scanS :: (a -> a -> a) -> a -> [a] -> ([a], a)
+  scanS _ e [] = ([], e)
+  scanS _ e [x] = ([e], x)
+  scanS f e xs = -- scanS (+) 0 [1, 2, 3, 4, 5]
+    let 
+        -- <x0 + x1, x2 + x3, ..., x2k-1 + x2k>
+        -- [1 + 2, 3 + 4]
+        apareados = contraerPares xs
+        
+        -- (<e, x0 + x1, x0 + x1 + x2 + x3, ...>, x0 + ... + x2k)
+        -- [[0, 1 + 2], 1 + 2 + 3 + 4]
+        (pares, totalPares) = scanS f e apareados
+
+        -- <x0, x2, x4, ..., x2k-2, x2k>
+        -- [1, 3, 5]
+        paresOriginales = extraerPares xs
+
+        -- <e, x0, x0 + x1, x0 + x1 + x2, ..., x0 + ... + x2k>
+        -- [0, 1, 1 + 2, 1 + 2 + 3, 1 + 2 + 3 + 4]
+        prefijos = combinarS pares paresOriginales totalPares
+
+        -- x0 + ... + x2k + x2k+1
+        -- 1 + 2 + 3 + 4 + 5
+        totalFinal = calcularTotal pares paresOriginales totalPares
+    in (prefijos, totalFinal)
+      where
+        -- Work -> O(n * W(f))
+        -- Span -> O(n + S(f))
+        -- Descarta el útlimo elemento si es impar
+        contraerPares [] = []
+        contraerPares [x] = []
+        contraerPares (x:y:rest) = 
+          let (par, resto) = f x y ||| contraerPares rest
+           in par : resto
+
+        -- O(n)
+        -- Obtiene los elementos pares originales
+        extraerPares [] = []
+        extraerPares [x] = [x]
+        extraerPares (x:_:rest) = x : extraerPares rest
+
+        -- Work -> O(n * W(f))
+        -- Span -> O(n + S(f))
+        -- Intercala los resultados pares con los impares
+        combinarS [] [] _ = []
+        combinarS [] [_] t = [t] -- Si sobra uno, el prefijo es el totalPares
+        combinarS (ev:evs) (p:ps) t = 
+          let (oddVal, resto) = f ev p ||| combinarS evs ps t
+           in ev : oddVal : resto
+        combinarS _ _ _ = [] 
+
+        -- O(n)
+        -- Define si el total requiere sumar el último elemento impar
+        calcularTotal [] [] t = t
+        calcularTotal [] [x] t = f t x
+        calcularTotal (_:es) (_:ps) t = calcularTotal es ps t
+        calcularTotal _ _ t = t
 
   {-
-  reduceS1 :: (a -> a -> a) -> a -> [a] -> a
-  reduceS1 _ e [] = e
-  reduceS1 _ _ [x] = x
-  reduceS1 f e xs =
-    let mitad = lengthS xs `div` 2
-        (l, r) = splitAt mitad xs
-        (a, b) = reduceS1 f e l ||| reduceS1 f e r
-     in f a b
-  -}
   -- O(n)
   scanS :: (a -> a -> a) -> a -> [a] -> ([a], a)
   scanS f e xs = (init scanned, last scanned)
     where
       scanned = scanl f e xs
+  -}
+
+  -- O(1)
+  fromList :: [a] -> [a]
+  fromList xs = xs
 
   {-
-  scanS2 :: (a -> a -> a) -> a -> [a] -> ([a], a)
-  scanS2 f e xs = case showtS xs of
-    EMPTY -> (emptyS, e)
-    ELT x -> (singletonS e, f e x)
-    NODE l r ->
-      let ((scanL, totL), (scanR, totR)) = scanS2 f e l ||| scanS2 f e r
-          scanR2 = mapS (f totL) scanR
-       in (appendS scanL scanR2, f totL totR)
-  -}
   -- O(1)
   fromList :: [a] -> [a]
   fromList = id
+  -}

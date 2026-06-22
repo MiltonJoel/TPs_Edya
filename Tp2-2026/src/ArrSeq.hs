@@ -46,7 +46,7 @@ appendA :: A.Arr a -> A.Arr a -> A.Arr a
 appendA arr1 arr2 = tabulateA (\i -> if i < l1 then arr1 ! i else arr2 ! (i-l1)) (l1+l2)
                  where l1 = lengthA arr1 
                        l2 = lengthA arr2
-
+{-
 -- W = O(sum W(f si)), S = O(lg|s| + max S(f si))
 filterA ::(a -> Bool) -> A.Arr a -> A.Arr a 
 filterA p arr = case (lengthA arr) of
@@ -54,6 +54,10 @@ filterA p arr = case (lengthA arr) of
                 1 -> if p (nthA arr 0) then takeA arr 1 else emptyA
                 n -> let (l,r) = filterA p (takeA arr (n `div` 2)) ||| filterA p (dropA arr (n `div` 2))
                      in appendA l r 
+-}
+-- W = O(n), S = O(lg n)
+filterA :: (a -> Bool) -> A.Arr a -> A.Arr a 
+filterA p arr = joinA (mapA (\x -> if p x then singletonA x else emptyA) arr)
 
 -- O(1)
 showtA :: A.Arr a -> TreeView a (A.Arr a)
@@ -96,17 +100,17 @@ reduceA f e arr = case (lengthA arr) of
 -- W = O(|v|), S = O(max S(f))
 expandA :: (a -> a -> a) -> a -> A.Arr a -> A.Arr a -> A.Arr a
 expandA f b v v' = tabulateA aux (lengthA v) where 
-  aux i = case even i of
-    True  -> nthA v' (div i 2)
-    False -> f (nthA v' (div i 2)) (nthA v (i-1))
+  aux i = if  even i 
+    then nthA v' (div i 2)
+    else f (nthA v' (div i 2)) (nthA v (i-1))
 
 -- W = O(|v| + sum W(x op y)), S = O(lg|v| * max S(x op y))
 scanA :: (a -> a -> a) -> a -> A.Arr a -> (A.Arr a, a)
 scanA f b v = case lengthA v of
   0 -> (emptyA, b)
   1 -> (singletonA b, f b (nthA v 0))
-  otherwise -> let (v', r) = scanA f b (contrA f v)
-               in (expandA f b v v', r) 
+  _ -> let (v', r) = scanA f b (contrA f v)
+       in (expandA f b v v', r) 
 
 instance Seq A.Arr where
   emptyS     = emptyA
